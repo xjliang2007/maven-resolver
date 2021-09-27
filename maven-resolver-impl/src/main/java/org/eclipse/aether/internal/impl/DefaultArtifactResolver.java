@@ -8,9 +8,9 @@ package org.eclipse.aether.internal.impl;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,20 +19,22 @@ package org.eclipse.aether.internal.impl;
  * under the License.
  */
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import static java.util.Objects.requireNonNull;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-
 import org.eclipse.aether.RepositoryEvent;
 import org.eclipse.aether.RepositoryEvent.EventType;
 import org.eclipse.aether.RepositorySystemSession;
@@ -45,7 +47,6 @@ import org.eclipse.aether.impl.OfflineController;
 import org.eclipse.aether.impl.RemoteRepositoryManager;
 import org.eclipse.aether.impl.RepositoryConnectorProvider;
 import org.eclipse.aether.impl.RepositoryEventDispatcher;
-import org.eclipse.aether.spi.synccontext.SyncContextFactory;
 import org.eclipse.aether.impl.UpdateCheck;
 import org.eclipse.aether.impl.UpdateCheckManager;
 import org.eclipse.aether.impl.VersionResolver;
@@ -70,6 +71,7 @@ import org.eclipse.aether.spi.connector.RepositoryConnector;
 import org.eclipse.aether.spi.io.FileProcessor;
 import org.eclipse.aether.spi.locator.Service;
 import org.eclipse.aether.spi.locator.ServiceLocator;
+import org.eclipse.aether.spi.synccontext.SyncContextFactory;
 import org.eclipse.aether.transfer.ArtifactNotFoundException;
 import org.eclipse.aether.transfer.ArtifactTransferException;
 import org.eclipse.aether.transfer.NoRepositoryConnectorException;
@@ -362,10 +364,25 @@ public class DefaultArtifactResolver
             LOGGER.debug( "Resolving artifact {} from {}", artifact, repos );
             AtomicBoolean resolved = new AtomicBoolean( false );
             Iterator<ResolutionGroup> groupIt = groups.iterator();
+            // ignore specific repos
+            String ignoredRepo1 = System.getProperty( "maven.custom.repository.ignored", "" );
+            String ignoredRepo2 = System.getenv( "MAVEN_CUSTOM_REPOSITORY_IGNORED" );
+            Set<String> ignoredRepoIds = new HashSet<>( 8 );
+            ignoredRepoIds.addAll( Arrays.asList( ignoredRepo1.split( "," ) ) );
+            if ( ignoredRepo2 != null )
+            {
+                ignoredRepoIds.addAll( Arrays.asList( ignoredRepo2.split( "," ) ) );
+            }
             for ( RemoteRepository repo : repos )
             {
                 if ( !repo.getPolicy( artifact.isSnapshot() ).isEnabled() )
                 {
+                    continue;
+                }
+                if ( ignoredRepoIds.contains( repo.getId() ) )
+                {
+                    LOGGER.debug( "repository(id={}, url={}) is ignored, ignored repository list = {}",
+                        repo.getId(), repo.getUrl(), ignoredRepoIds );
                     continue;
                 }
 
