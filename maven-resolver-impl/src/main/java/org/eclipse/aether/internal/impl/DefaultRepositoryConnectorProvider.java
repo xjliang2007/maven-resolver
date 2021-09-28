@@ -19,15 +19,14 @@ package org.eclipse.aether.internal.impl;
  * under the License.
  */
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import static java.util.Objects.requireNonNull;
 import java.util.Set;
-
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.impl.RepositoryConnectorProvider;
 import org.eclipse.aether.repository.Authentication;
@@ -63,6 +62,7 @@ public class DefaultRepositoryConnectorProvider
         setRepositoryConnectorFactories( connectorFactories );
     }
 
+    @Override
     public void initService( ServiceLocator locator )
     {
         connectorFactories = locator.getServices( RepositoryConnectorFactory.class );
@@ -88,6 +88,7 @@ public class DefaultRepositoryConnectorProvider
         return this;
     }
 
+    @Override
     public RepositoryConnector newRepositoryConnector( RepositorySystemSession session, RemoteRepository repository )
         throws NoRepositoryConnectorException
     {

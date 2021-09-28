@@ -192,6 +192,7 @@ final class BasicRepositoryConnector
         }
     }
 
+    @Override
     public void close()
     {
         if ( !closed )
@@ -205,6 +206,7 @@ final class BasicRepositoryConnector
         }
     }
 
+    @Override
     public void get( Collection<? extends ArtifactDownload> artifactDownloads,
                      Collection<? extends MetadataDownload> metadataDownloads )
     {
@@ -265,6 +267,7 @@ final class BasicRepositoryConnector
         errorForwarder.await();
     }
 
+    @Override
     public void put( Collection<? extends ArtifactUpload> artifactUploads,
                      Collection<? extends MetadataUpload> metadataUploads )
     {
@@ -356,6 +359,7 @@ final class BasicRepositoryConnector
             this.listener = listener;
         }
 
+        @Override
         public void run()
         {
             try
@@ -384,6 +388,7 @@ final class BasicRepositoryConnector
             super( path, listener );
         }
 
+        @Override
         protected void runTask()
             throws Exception
         {
@@ -410,12 +415,14 @@ final class BasicRepositoryConnector
                 new ChecksumValidator( file, fileProcessor, this, checksumPolicy, safe( checksums ) );
         }
 
+        @Override
         public void checkRemoteAccess()
             throws Exception
         {
             transporter.peek( new PeekTask( path ) );
         }
 
+        @Override
         public boolean fetchChecksum( URI remote, File local )
             throws Exception
         {
@@ -434,6 +441,7 @@ final class BasicRepositoryConnector
             return true;
         }
 
+        @Override
         protected void runTask()
             throws Exception
         {
@@ -529,6 +537,7 @@ final class BasicRepositoryConnector
             this.checksums = safe( checksums );
         }
 
+        @Override
         @SuppressWarnings( "checkstyle:innerassignment" )
         protected void runTask()
             throws Exception
@@ -623,6 +632,7 @@ final class BasicRepositoryConnector
 
         static final Executor INSTANCE = new DirectExecutor();
 
+        @Override
         public void execute( Runnable command )
         {
             command.run();

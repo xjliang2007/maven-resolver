@@ -8,9 +8,9 @@ package org.eclipse.aether.internal.impl;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,6 +19,8 @@ package org.eclipse.aether.internal.impl;
  * under the License.
  */
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,12 +28,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import static java.util.Objects.requireNonNull;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import org.eclipse.aether.RepositoryEvent;
 import org.eclipse.aether.RepositoryEvent.EventType;
 import org.eclipse.aether.RepositorySystemSession;
@@ -127,6 +126,7 @@ public class DefaultArtifactResolver
         setOfflineController( offlineController );
     }
 
+    @Override
     public void initService( ServiceLocator locator )
     {
         setFileProcessor( locator.getService( FileProcessor.class ) );
@@ -201,12 +201,14 @@ public class DefaultArtifactResolver
         return this;
     }
 
+    @Override
     public ArtifactResult resolveArtifact( RepositorySystemSession session, ArtifactRequest request )
         throws ArtifactResolutionException
     {
         return resolveArtifacts( session, Collections.singleton( request ) ).get( 0 );
     }
 
+    @Override
     public List<ArtifactResult> resolveArtifacts( RepositorySystemSession session,
                                                   Collection<? extends ArtifactRequest> requests )
         throws ArtifactResolutionException
@@ -506,6 +508,14 @@ public class DefaultArtifactResolver
                     throw new NoRepositoryConnectorException( repo, "Blocked mirror for repositories: "
                         + repo.getMirroredRepositories() );
                 }
+            }
+
+            // add by xiaojiang : ignore specific repos
+            if ( Utils.getIgnoredRepositories().contains(repo.getId() ) )
+            {
+                LOGGER.debug( "processor = {}, repository(id={}, url={}) is ignored, ignored repository list = {}",
+                    DefaultArtifactResolver.class.getSimpleName() , repo.getId(), repo.getUrl(), Utils.getIgnoredRepositories() );
+                return;
             }
 
             try ( RepositoryConnector connector =

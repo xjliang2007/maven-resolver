@@ -8,9 +8,9 @@ package org.eclipse.aether.internal.impl;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,9 +20,11 @@ package org.eclipse.aether.internal.impl;
  */
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
-
+import java.util.Set;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.impl.MetadataGenerator;
@@ -124,4 +126,30 @@ final class Utils
         }
     }
 
+    /**
+     * add by xiaojiang : ignore specific repos
+     *
+     * get ignored repositories from system properties or system environment
+     * e.g.
+     * -Dmaven.custom.repository.ignored=ignored-repo1,ignored-repo2
+     * or
+     * export MAVEN_CUSTOM_REPOSITORY_IGNORED=ignored-repo3
+     *
+     * @return a set of ignored repository id
+     */
+    public static Set<String> getIgnoredRepositories()
+    {
+        Set<String> ignoredRepoIds = new HashSet<>( 8 );
+        String ignoredRepoFromSystemProperties = System.getProperty( "maven.custom.repository.ignored" );
+        String ignoredRepoFromSystemEnvs = System.getenv( "MAVEN_CUSTOM_REPOSITORY_IGNORED" );
+        if ( ignoredRepoFromSystemProperties != null )
+        {
+            ignoredRepoIds.addAll( Arrays.asList( ignoredRepoFromSystemProperties.split( "," ) ) );
+        }
+        if ( ignoredRepoFromSystemEnvs != null )
+        {
+            ignoredRepoIds.addAll( Arrays.asList( ignoredRepoFromSystemEnvs.split( "," ) ) );
+        }
+        return ignoredRepoIds;
+    }
 }

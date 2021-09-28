@@ -8,9 +8,9 @@ package org.eclipse.aether.internal.impl;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,6 +18,8 @@ package org.eclipse.aether.internal.impl;
  * specific language governing permissions and limitations
  * under the License.
  */
+
+import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -27,16 +29,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static java.util.Objects.requireNonNull;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import org.eclipse.aether.RepositoryEvent;
 import org.eclipse.aether.RepositoryEvent.EventType;
 import org.eclipse.aether.RepositorySystemSession;
@@ -72,6 +71,8 @@ import org.eclipse.aether.transfer.RepositoryOfflineException;
 import org.eclipse.aether.util.ConfigUtils;
 import org.eclipse.aether.util.concurrency.RunnableErrorForwarder;
 import org.eclipse.aether.util.concurrency.WorkerThreadFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  */
@@ -79,6 +80,7 @@ import org.eclipse.aether.util.concurrency.WorkerThreadFactory;
 public class DefaultMetadataResolver
     implements MetadataResolver, Service
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger( DefaultMetadataResolver.class );
 
     private static final String CONFIG_PROP_THREADS = "aether.metadataResolver.threads";
 
@@ -114,6 +116,7 @@ public class DefaultMetadataResolver
         setOfflineController( offlineController );
     }
 
+    @Override
     public void initService( ServiceLocator locator )
     {
         setRepositoryEventDispatcher( locator.getService( RepositoryEventDispatcher.class ) );
@@ -164,6 +167,7 @@ public class DefaultMetadataResolver
         return this;
     }
 
+    @Override
     public List<MetadataResult> resolveMetadata( RepositorySystemSession session,
                                                  Collection<? extends MetadataRequest> requests )
     {
@@ -505,6 +509,7 @@ public class DefaultMetadataResolver
         {
             return new Executor()
             {
+                @Override
                 public void execute( Runnable command )
                 {
                     command.run();
@@ -558,6 +563,7 @@ public class DefaultMetadataResolver
             this.checks = checks;
         }
 
+        @Override
         public void run()
         {
             Metadata metadata = request.getMetadata();
@@ -565,6 +571,14 @@ public class DefaultMetadataResolver
 
             try
             {
+                // add by xiaojiang : ignore specific repos
+                if ( Utils.getIgnoredRepositories().contains( requestRepository.getId() ) )
+                {
+                    LOGGER.debug( "processor = {}, repository(id={}, url={}) is ignored, ignored repository list = {}",
+                        DefaultMetadataResolver.class.getSimpleName(), requestRepository.getId(), requestRepository.getUrl(), Utils.getIgnoredRepositories() );
+                    return;
+                }
+
                 List<RemoteRepository> repositories = new ArrayList<>();
                 for ( UpdateCheck<Metadata, MetadataTransferException> check : checks )
                 {
